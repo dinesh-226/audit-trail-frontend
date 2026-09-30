@@ -1,8 +1,9 @@
-/**
- * MaritimeGuard Central API Client
- */
+export const BACKEND_URL = 'https://logic-sprint-backend.vercel.app';
 
-const API_BASE = '/api';
+export const API_BASE = import.meta.env.VITE_API_BASE_URL ||
+  (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+    ? '/api'
+    : `${BACKEND_URL}/api`);
 
 const getHeaders = () => {
   const token = localStorage.getItem('auditflow_token');

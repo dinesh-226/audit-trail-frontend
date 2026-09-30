@@ -363,7 +363,7 @@ function MainApp() {
                 <button
                   onClick={async () => {
                     if (confirm('Re-seed database with fresh demo data?')) {
-                      await fetch('/api/system/reseed', { method: 'POST' });
+                      await api.system.reseed();
                       window.location.reload();
                     }
                   }}
