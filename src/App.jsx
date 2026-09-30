@@ -83,6 +83,16 @@ function MainApp() {
     }
   });
 
+  // Modals state
+  const [showGlobalSearch, setShowGlobalSearch] = useState(false);
+  const [showTamperModal, setShowTamperModal] = useState(false);
+  const [editingShip, setEditingShip] = useState(null);
+  const [showShipModal, setShowShipModal] = useState(false);
+  const [editingContainer, setEditingContainer] = useState(null);
+  const [showContainerModal, setShowContainerModal] = useState(false);
+  const [inspectionContainerId, setInspectionContainerId] = useState(null);
+  const [evidenceContainerId, setEvidenceContainerId] = useState(null);
+
   // Persist viewMode
   useEffect(() => {
     try {
