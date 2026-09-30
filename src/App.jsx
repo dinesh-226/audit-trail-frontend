@@ -37,21 +37,98 @@ function MainApp() {
   const { user, token, loading, logout } = useAuth();
   
   // High-level view mode: 'app' | 'landing' | 'login' | 'register'
-  const [viewMode, setViewMode] = useState('landing');
-  const [activeTab, setActiveTab] = useState('dashboard');
-  const [selectedShipId, setSelectedShipId] = useState(null);
-  const [selectedContainerId, setSelectedContainerId] = useState(null);
-  const [timelineContainerId, setTimelineContainerId] = useState(null);
+  const [viewMode, setViewMode] = useState(() => {
+    try {
+      const savedMode = localStorage.getItem('auditflow_view_mode');
+      const savedToken = localStorage.getItem('auditflow_token');
+      if (savedToken) {
+        if (savedMode === 'login' || savedMode === 'register') return 'app';
+        return savedMode || 'app';
+      }
+      return savedMode || 'landing';
+    } catch (e) {
+      return 'landing';
+    }
+  });
 
-  // Modals state
-  const [showGlobalSearch, setShowGlobalSearch] = useState(false);
-  const [showTamperModal, setShowTamperModal] = useState(false);
-  const [editingShip, setEditingShip] = useState(null);
-  const [showShipModal, setShowShipModal] = useState(false);
-  const [editingContainer, setEditingContainer] = useState(null);
-  const [showContainerModal, setShowContainerModal] = useState(false);
-  const [inspectionContainerId, setInspectionContainerId] = useState(null);
-  const [evidenceContainerId, setEvidenceContainerId] = useState(null);
+  const [activeTab, setActiveTab] = useState(() => {
+    try {
+      return localStorage.getItem('auditflow_active_tab') || 'dashboard';
+    } catch (e) {
+      return 'dashboard';
+    }
+  });
+
+  const [selectedShipId, setSelectedShipId] = useState(() => {
+    try {
+      return localStorage.getItem('auditflow_selected_ship_id') || null;
+    } catch (e) {
+      return null;
+    }
+  });
+
+  const [selectedContainerId, setSelectedContainerId] = useState(() => {
+    try {
+      return localStorage.getItem('auditflow_selected_container_id') || null;
+    } catch (e) {
+      return null;
+    }
+  });
+
+  const [timelineContainerId, setTimelineContainerId] = useState(() => {
+    try {
+      return localStorage.getItem('auditflow_timeline_container_id') || null;
+    } catch (e) {
+      return null;
+    }
+  });
+
+  // Persist viewMode
+  useEffect(() => {
+    try {
+      localStorage.setItem('auditflow_view_mode', viewMode);
+    } catch (e) {}
+  }, [viewMode]);
+
+  // Persist activeTab
+  useEffect(() => {
+    try {
+      localStorage.setItem('auditflow_active_tab', activeTab);
+    } catch (e) {}
+  }, [activeTab]);
+
+  // Persist selectedShipId
+  useEffect(() => {
+    try {
+      if (selectedShipId) {
+        localStorage.setItem('auditflow_selected_ship_id', selectedShipId);
+      } else {
+        localStorage.removeItem('auditflow_selected_ship_id');
+      }
+    } catch (e) {}
+  }, [selectedShipId]);
+
+  // Persist selectedContainerId
+  useEffect(() => {
+    try {
+      if (selectedContainerId) {
+        localStorage.setItem('auditflow_selected_container_id', selectedContainerId);
+      } else {
+        localStorage.removeItem('auditflow_selected_container_id');
+      }
+    } catch (e) {}
+  }, [selectedContainerId]);
+
+  // Persist timelineContainerId
+  useEffect(() => {
+    try {
+      if (timelineContainerId) {
+        localStorage.setItem('auditflow_timeline_container_id', timelineContainerId);
+      } else {
+        localStorage.removeItem('auditflow_timeline_container_id');
+      }
+    } catch (e) {}
+  }, [timelineContainerId]);
 
   // Global Ctrl+K shortcut for search
   useEffect(() => {
@@ -65,16 +142,30 @@ function MainApp() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  // Automatically return to landing page if user logs out or session is cleared
+  // Synchronize auth state with viewMode
   useEffect(() => {
-    if (!user && viewMode === 'app') {
-      setViewMode('landing');
-      setActiveTab('dashboard');
+    if (!loading) {
+      if ((user || token) && viewMode === 'landing') {
+        const savedMode = localStorage.getItem('auditflow_view_mode');
+        if (savedMode === 'app') {
+          setViewMode('app');
+        }
+      } else if (!user && !token && viewMode === 'app') {
+        setViewMode('landing');
+        setActiveTab('dashboard');
+      }
     }
-  }, [user, viewMode]);
+  }, [user, token, loading, viewMode]);
 
   const handleSignOut = () => {
     logout();
+    try {
+      localStorage.removeItem('auditflow_view_mode');
+      localStorage.removeItem('auditflow_active_tab');
+      localStorage.removeItem('auditflow_selected_ship_id');
+      localStorage.removeItem('auditflow_selected_container_id');
+      localStorage.removeItem('auditflow_timeline_container_id');
+    } catch (e) {}
     setViewMode('landing');
     setActiveTab('dashboard');
   };
@@ -101,7 +192,8 @@ function MainApp() {
 
   const handleAuthSuccess = (authUser) => {
     setViewMode('app');
-    setActiveTab('dashboard');
+    const savedTab = localStorage.getItem('auditflow_active_tab');
+    setActiveTab(savedTab && savedTab !== 'login' && savedTab !== 'register' ? savedTab : 'dashboard');
   };
 
   // If viewing the public Landing Page
