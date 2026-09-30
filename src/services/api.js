@@ -1,4 +1,4 @@
-export const BACKEND_URL = 'https://logic-sprint-backend.vercel.app';
+export const BACKEND_URL = 'https://audit-trail-backend.vercel.app';
 
 export const API_BASE = import.meta.env.VITE_API_BASE_URL ||
   (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
