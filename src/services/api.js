@@ -174,6 +174,38 @@ export const api = {
     }
   },
 
+  // System Alerts & Notification Center
+  alerts: {
+    getAll: async (params = {}) => {
+      const res = await fetch(`${API_BASE}/alerts${buildQueryString(params)}`, {
+        headers: getHeaders()
+      });
+      return handleResponse(res);
+    },
+    markRead: async (alertId) => {
+      const res = await fetch(`${API_BASE}/alerts/${encodeURIComponent(alertId)}/read`, {
+        method: 'PATCH',
+        headers: getHeaders()
+      });
+      return handleResponse(res);
+    },
+    markAllRead: async () => {
+      const res = await fetch(`${API_BASE}/alerts/mark-all-read`, {
+        method: 'PATCH',
+        headers: getHeaders()
+      });
+      return handleResponse(res);
+    },
+    create: async (alertData) => {
+      const res = await fetch(`${API_BASE}/alerts`, {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify(alertData)
+      });
+      return handleResponse(res);
+    }
+  },
+
   // Ships Fleet
   ships: {
     getAll: async (params = {}) => {
@@ -373,37 +405,6 @@ export const api = {
     }
   },
 
-  // Alerts
-  alerts: {
-    getAll: async (params = {}) => {
-      const res = await fetch(`${API_BASE}/alerts${buildQueryString(params)}`, {
-        headers: getHeaders()
-      });
-      return handleResponse(res);
-    },
-    create: async (alertData) => {
-      const res = await fetch(`${API_BASE}/alerts`, {
-        method: 'POST',
-        headers: getHeaders(),
-        body: JSON.stringify(alertData)
-      });
-      return handleResponse(res);
-    },
-    markRead: async (alertId) => {
-      const res = await fetch(`${API_BASE}/alerts/${alertId}/read`, {
-        method: 'PATCH',
-        headers: getHeaders()
-      });
-      return handleResponse(res);
-    },
-    markAllRead: async () => {
-      const res = await fetch(`${API_BASE}/alerts/mark-all-read`, {
-        method: 'POST',
-        headers: getHeaders()
-      });
-      return handleResponse(res);
-    }
-  },
 
   // Port Activities & Operations
   portActivities: {

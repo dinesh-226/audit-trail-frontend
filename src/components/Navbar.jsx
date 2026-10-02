@@ -68,13 +68,36 @@ export const Navbar = ({ onOpenGlobalSearch, onOpenProfile, onSignOut }) => {
     }
   };
 
-  const handleMarkAllRead = async () => {
+  const handleMarkAllRead = async (e) => {
+    if (e) e.stopPropagation();
+    // Optimistic UI update
+    setUnreadCount(0);
+    setAlerts(prev => prev.map(a => ({ ...a, isRead: true })));
     try {
       await api.alerts.markAllRead();
-      setUnreadCount(0);
-      setAlerts(prev => prev.map(a => ({ ...a, isRead: true })));
+      fetchAlerts();
     } catch (e) {
-      console.error(e);
+      console.error('Failed to mark all alerts as read:', e);
+    }
+  };
+
+  const handleMarkAlertRead = async (alertId, e) => {
+    if (e) e.stopPropagation();
+    if (!alertId) return;
+    
+    // Check if already read
+    const targetAlert = alerts.find(a => a.alertId === alertId || a._id === alertId);
+    if (targetAlert && targetAlert.isRead) return;
+
+    // Optimistic UI update
+    setAlerts(prev => prev.map(a => (a.alertId === alertId || a._id === alertId ? { ...a, isRead: true } : a)));
+    setUnreadCount(prev => Math.max(0, prev - 1));
+
+    try {
+      await api.alerts.markRead(alertId);
+    } catch (e) {
+      console.error('Failed to mark alert as read:', e);
+      fetchAlerts(); // Rollback/resync if failed
     }
   };
 
@@ -251,11 +274,11 @@ export const Navbar = ({ onOpenGlobalSearch, onOpenProfile, onSignOut }) => {
               position: 'absolute',
               right: 0,
               top: '44px',
-              width: '340px',
+              width: '350px',
               background: '#ffffff',
               border: '1px solid #cbd5e1',
               borderRadius: '12px',
-              boxShadow: 'var(--shadow-xl)',
+              boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
               zIndex: 200,
               overflow: 'hidden'
             }}>
@@ -270,47 +293,127 @@ export const Navbar = ({ onOpenGlobalSearch, onOpenProfile, onSignOut }) => {
                 <div style={{ fontWeight: 700, fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px', color: '#0f3460' }}>
                   <Bell size={14} color="#0284c7" />
                   <span>Notifications</span>
+                  {unreadCount > 0 && (
+                    <span style={{
+                      background: '#0284c7',
+                      color: '#ffffff',
+                      fontSize: '10px',
+                      fontWeight: 800,
+                      padding: '1px 6px',
+                      borderRadius: '999px'
+                    }}>
+                      {unreadCount} new
+                    </span>
+                  )}
                 </div>
                 {unreadCount > 0 && (
                   <button
                     onClick={handleMarkAllRead}
                     type="button"
-                    style={{ background: 'none', border: 'none', color: '#0284c7', fontSize: '11px', cursor: 'pointer', fontWeight: 700 }}
+                    style={{
+                      background: '#e0f2fe',
+                      border: 'none',
+                      color: '#0284c7',
+                      fontSize: '11px',
+                      cursor: 'pointer',
+                      fontWeight: 700,
+                      padding: '3px 8px',
+                      borderRadius: '4px',
+                      transition: 'all 0.15s ease'
+                    }}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = '#bae6fd'; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = '#e0f2fe'; }}
                   >
-                    Mark read
+                    Mark all read
                   </button>
                 )}
               </div>
 
-              <div style={{ maxHeight: '280px', overflowY: 'auto' }}>
+              <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
                 {alerts.length === 0 ? (
-                  <div style={{ padding: '20px', textAlign: 'center', color: '#94a3b8', fontSize: '12px' }}>
-                    No unread notifications.
+                  <div style={{ padding: '24px 20px', textAlign: 'center', color: '#94a3b8', fontSize: '12px' }}>
+                    <div style={{ marginBottom: '4px', fontWeight: 600 }}>No notifications</div>
+                    <div style={{ fontSize: '11px', color: '#cbd5e1' }}>System is running normally</div>
                   </div>
                 ) : (
-                  alerts.map((alert) => (
-                    <div
-                      key={alert.alertId}
-                      style={{
-                        padding: '10px 16px',
-                        borderBottom: '1px solid #f1f5f9',
-                        background: alert.isRead ? '#ffffff' : '#f0f9ff',
-                        fontSize: '12px'
-                      }}
-                    >
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px' }}>
-                        <span style={{ fontWeight: 700, color: alert.severity === 'critical' ? '#dc2626' : '#0f3460' }}>
-                          {alert.title}
-                        </span>
-                        <span style={{ fontSize: '10px', color: '#94a3b8' }}>
-                          {new Date(alert.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        </span>
+                  alerts.map((alert) => {
+                    const id = alert.alertId || alert._id;
+                    const isUnread = !alert.isRead;
+                    return (
+                      <div
+                        key={id}
+                        onClick={() => handleMarkAlertRead(id)}
+                        style={{
+                          padding: '10px 16px',
+                          borderBottom: '1px solid #f1f5f9',
+                          background: isUnread ? '#f0f9ff' : '#ffffff',
+                          fontSize: '12px',
+                          cursor: isUnread ? 'pointer' : 'default',
+                          transition: 'background 0.15s ease',
+                          position: 'relative'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.background = isUnread ? '#e0f2fe' : '#f8fafc';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.background = isUnread ? '#f0f9ff' : '#ffffff';
+                        }}
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            {isUnread && (
+                              <span style={{
+                                width: '6px',
+                                height: '6px',
+                                borderRadius: '50%',
+                                background: '#0284c7',
+                                display: 'inline-block',
+                                flexShrink: 0
+                              }} />
+                            )}
+                            <span style={{
+                              fontWeight: isUnread ? 800 : 600,
+                              color: alert.severity === 'critical' ? '#dc2626' : (alert.severity === 'high' ? '#d97706' : '#0f3460')
+                            }}>
+                              {alert.title}
+                            </span>
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <span style={{ fontSize: '10px', color: '#94a3b8' }}>
+                              {new Date(alert.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                            {isUnread ? (
+                              <button
+                                onClick={(e) => handleMarkAlertRead(id, e)}
+                                type="button"
+                                style={{
+                                  background: '#ffffff',
+                                  border: '1px solid #cbd5e1',
+                                  color: '#0284c7',
+                                  fontSize: '10px',
+                                  fontWeight: 700,
+                                  padding: '1px 5px',
+                                  borderRadius: '4px',
+                                  cursor: 'pointer',
+                                  lineHeight: 1.2
+                                }}
+                                title="Mark as read"
+                              >
+                                Mark read
+                              </button>
+                            ) : (
+                              <span style={{ fontSize: '10px', color: '#10b981', display: 'flex', alignItems: 'center', gap: '2px' }}>
+                                <Check size={10} />
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <div style={{ color: isUnread ? '#334155' : '#64748b', fontSize: '11px', lineHeight: '1.4', paddingLeft: isUnread ? '12px' : '0' }}>
+                          {alert.message}
+                        </div>
                       </div>
-                      <div style={{ color: '#475569', fontSize: '11px', lineHeight: '1.4' }}>
-                        {alert.message}
-                      </div>
-                    </div>
-                  ))
+                    );
+                  })
                 )}
               </div>
             </div>

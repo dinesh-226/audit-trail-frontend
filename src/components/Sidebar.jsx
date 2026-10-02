@@ -188,42 +188,6 @@ export const Sidebar = ({ activeTab, setActiveTab, onGoToLanding, onSignOut }) =
             </div>
           </div>
         </div>
-
-        {/* Quick Back to Landing Page Link */}
-        {onGoToLanding && (
-          <button
-            onClick={onGoToLanding}
-            type="button"
-            style={{
-              marginTop: '12px',
-              width: '100%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '6px',
-              background: '#f8fafc',
-              border: '1px solid #e2e8f0',
-              padding: '6px 10px',
-              borderRadius: '6px',
-              color: '#0f3460',
-              fontSize: '11px',
-              fontWeight: 700,
-              cursor: 'pointer',
-              transition: 'all 0.15s ease'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = '#f0f5fa';
-              e.currentTarget.style.borderColor = '#0284c7';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = '#f8fafc';
-              e.currentTarget.style.borderColor = '#e2e8f0';
-            }}
-          >
-            <Globe size={12} color="#0284c7" />
-            <span>Public Landing Page</span>
-          </button>
-        )}
       </div>
 
       {/* Navigation Items List */}
